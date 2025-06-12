@@ -71,8 +71,9 @@ CacheData <- function()
   #df$OHP = GetHolCounts(con,"Official Holiday Period",0,nrow(df))
   #df$Easter = GetHolCounts(con,"Easter",0,nrow(df))
 
+  df$Over34 = !(df$AgeGroup %in% c("00-04","05-14","15-24","25-34")) | df$Age >34
+  df$Under16 =  df$AgeGroup %in% c("00-04","05-14") | df$Age <16
 
-  df$Under16 = df$AgeGroup %in% c("00-04","05-14") | df$Age <16
   grps= data.frame()
   grps=rbind(grps, data.frame(Cat = "Region",      Grp = sqldf("SELECT DISTINCT RegionDesc1 FROM df WHERE RegionID <> 12 ORDER BY RegionID")$RegionDesc1))
   grps=rbind(grps, data.frame(Cat = "Age",         Grp = sort(unique(df$AgeGroup))))

@@ -8,7 +8,10 @@ DrawDrowningFunnel(
   pi,
   path,
   df,
+  title,
+  subtitle,
   groupVar,
+  funnelLabels,
   funnelVars,
   funnelVals,
   colours = list(highlight = "#BF0000"),
@@ -24,7 +27,13 @@ DrawDrowningFunnel(
 
 \item{df}{Data frame of drowning records.}
 
+\item{title}{Title text}
+
+\item{subtitle}{Subtitle text}
+
 \item{groupVar}{Name of the variable for grouping (e.g., "RegionDesc1").}
+
+\item{funnelLabels}{Character vector of 3 filter names.}
 
 \item{funnelVars}{Character vector of 3 variables to filter progressively.}
 
