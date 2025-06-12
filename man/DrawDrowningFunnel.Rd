@@ -13,6 +13,7 @@ DrawDrowningFunnel(
   funnelVals,
   colours = list(highlight = "#BF0000"),
   years = 2000:2024,
+  groupGap = 0,
   DEBUG = FALSE
 )
 }
@@ -29,9 +30,11 @@ DrawDrowningFunnel(
 
 \item{funnelVals}{List of values (same length as funnelVars) used for filtering.}
 
-\item{colours}{Named list of colours, including \code{highlight}.}
+\item{colours}{Named list of colours, including \code{highlight}, \code{text1}, \code{text2}, \code{hitext}, \code{borders}.}
 
 \item{years}{Numeric vector of years to include.}
+
+\item{groupGap}{Numeric, vertical gap between groups in units of row height (e.g., 0.5 = half a row height).}
 
 \item{DEBUG}{Logical flag for debug mode.}
 }
