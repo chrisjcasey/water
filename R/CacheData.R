@@ -4,6 +4,13 @@
 #' performs preprocessing, attaches derived variables, loads GIS shapefiles,
 #' and saves the final objects into an `.RData` file for downstream use.
 #'
+#' @importFrom utils globalVariables
+#' @name cachedata-globals
+#' @rdname cachedata-globals
+utils::globalVariables(c(
+  "Name", "REGC2023_V", "REGC2023_1", "LAND_AREA_",
+  "AREA_SQ_KM", "Shape_Leng", "geometry"
+))
 #' @return None. Side effect is a saved file `Data/data.RData` in the working directory.
 #' @export
 #' @import DBI odbc sqldf sf lubridate dplyr

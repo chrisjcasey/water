@@ -3,8 +3,12 @@
 #' These colour and icon definitions are used across all graphical outputs.
 #' Colours follow a themed scheme around water, safety, and severity.
 #'
-
+#' @importFrom grImport2 readPicture
+#' @name graphicsstyle-imports
+#' @rdname graphicsstyle-imports
+NULL
 # Core colours
+
 colBlack   = "#000000"
 colWhite   = "#FFFFFF"
 colTeal    = "#1F5362"

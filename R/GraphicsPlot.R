@@ -3,21 +3,18 @@
 #' Sets up a blank PDF canvas with given page size and orientation.
 #'
 #' @param path File path for output PDF
-#' @param paper Paper size ("A4" or "A3")
+#' @param pagesize  Paper size ("A4" or "A3")
 #' @param orientation "portrait" or "landscape"
 #' @param DEBUG Logical; draw axes if TRUE and label page format
 #' @export
-PlotBasePage <- function(path = "", pagesize = "A4", orientation = "portrait", DEBUG = FALSE) {
-  plotdate <- Sys.Date() - 1
-
-  dims <- switch(pagesize,
+PlotBasePage <- function(path = "",pagesize = "A4",orientation = "portrait",DEBUG = FALSE) {
+  plotdate=Sys.Date()-1
+  dims=switch(pagesize,
                  A4 = list(width = 8.27, height = 11.69),
                  A3 = list(width = 11.69, height = 16.54),
                  stop("Unsupported paper size"))
 
-  if (orientation == "landscape") {
-    dims <- list(width = dims$height, height = dims$width)
-  }
+  if (orientation == "landscape") { dims = list(width = dims$height, height = dims$width)}
 
   cairo_pdf(filename = path,
             width = dims$width,
@@ -33,7 +30,7 @@ PlotBasePage <- function(path = "", pagesize = "A4", orientation = "portrait", D
        cex = 3, fg = colLtGray, col.axis = colGray)
 
   if (DEBUG) {
-    label <- sprintf("DEBUG MODE: %s %s", pagesize, tools::toTitleCase(orientation))
+    label = sprintf("DEBUG MODE: %s %s", pagesize, tools::toTitleCase(orientation))
     text(0.5, 1.9, label, col = colGray, cex = 1.4)
   }
 }

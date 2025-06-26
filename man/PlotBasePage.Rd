@@ -14,11 +14,11 @@ PlotBasePage(
 \arguments{
 \item{path}{File path for output PDF}
 
+\item{pagesize}{Paper size ("A4" or "A3")}
+
 \item{orientation}{"portrait" or "landscape"}
 
 \item{DEBUG}{Logical; draw axes if TRUE and label page format}
-
-\item{paper}{Paper size ("A4" or "A3")}
 }
 \description{
 Sets up a blank PDF canvas with given page size and orientation.
