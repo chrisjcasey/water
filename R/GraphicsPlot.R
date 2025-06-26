@@ -54,12 +54,12 @@ PlotPageHeader <- function(pi, colT, paper = "A4", orientation = "portrait") {
     dims = rev(dims)
   }
 
-  # Y position is near top, relative to canvas height
-  yTop = dims[2] / 2  # scale since your plotting region is 0 to 2 in y
 
-  if (pi %% 2 == 1) {
-    text(0.083, yTop, "www.watersafetynz.org", col = colT, font = 2, cex = 0.6)
-  }
+  yTop = 2
+
+  #if (pi %% 2 == 1) {
+    text(0.00, yTop, "www.watersafetynz.org", col = paste0(colT,"80"), font = 1, cex = 0.95,adj=0)
+  #}
 
   text(0.95, yTop, "P.", col = colT, font = 1, cex = 1, adj = c(1, 0.5))
   text(0.99, yTop, pi, col = colT, font = 2, cex = 1, adj = c(1, 0.5))

@@ -55,8 +55,8 @@ DrawDrowningFunnel <- function(
   xgap = 1 / (nYears + 3 + 1)  # +1 for total, +1 for gap
   leftadj=0.11
 
-  text(0.00,2,title,font=2,col=colours$text1,adj=0,cex=0.90)
-  text(0.00,1.975,subtitle,font=3,col=colours$text1,adj=0,cex=0.90)
+  text(0.00,1.975,title,font=2,col=colours$text1,adj=0,cex=0.90)
+  text(0.00,1.950,subtitle,font=3,col=colours$text1,adj=0,cex=0.90)
 
   drawFunnelBlock <- function(datRegion, regionName, y0base, rectcol, highlight=FALSE) {
     for (i in seq_along(years)) {
@@ -120,7 +120,7 @@ DrawDrowningFunnel <- function(
     region = groups[g]
     datRegion = df[df[[groupVar]] == region & df$Year %in% years, ]
     y0 = 2 - (g - 1) * 4 * ygap - (g - 1) * groupGap * ygap - headerLines *ygap
-    cat(region,nrow(datRegion),"\n")
+    if(DEBUG)cat(region,nrow(datRegion),"\n")
     drawFunnelBlock(datRegion, region, y0, colours$header, highlight=TRUE)
   }
 
@@ -206,9 +206,9 @@ DrawDrowning1VarSplit <- function(
 
 
 
-  lineHeight = min(0.14,2/(nGroups+4))
-
-  textSc = (lineHeight/0.14)^(1/5)
+  lineHeight = min(0.035,2/(nGroups+4))
+cat("lineHeight:",lineHeight,"\n")
+  textSc = (lineHeight/0.035)^(1/7)
   headerLines = 4
   nVars = 1
   totalLines = nGroups * nVars + groupGap*(nGroups+1) + headerLines
@@ -216,36 +216,33 @@ DrawDrowning1VarSplit <- function(
   colWidth = 1 / (nYears + 1 + 3)  # add margin
   leftadj=0.11
 
-  text(0.00,2,title,font=2,col=colours$text1,adj=0,cex=0.90)
-  text(0.00,1.975,subtitle,font=3,col=colours$text1,adj=0,cex=0.90)
+  text(0.00,1.965,title,font=2,col=colours$text1,adj=0,cex=0.90)
+  text(0.00,1.965,subtitle,font=3,col=colours$text1,adj=0,cex=0.90)
 
   for(gi in seq_along(groups))
   {
     levelName = groups[gi]
     datLevel= df[df[[groupVar]] == levelName & df$Year %in% years, ]
-    cat(levelName,nrow(datLevel),"\n")
+    if(DEBUG)cat(levelName,nrow(datLevel),"\n")
     y0 = 2 -(lineHeight*((gi-1)*nVars+groupGap*(gi-1) + headerLines))
     for (yi in seq_along(years))
     {
       yr = years[yi]
-      datYr = datLevel[datLevel$Year == yr, ]
+      datY = datLevel[datLevel$Year == yr, ]
       x0 = (yi - 1) * colWidth + leftadj
-      y0 = y0
 
-      counts = nrow(datYr)
+      counts = nrow(datY)
 
-      yy = y0
-      rect(x0, yy - lineHeight, x0 + colWidth, yy, border = colours$borders , lwd = 1)
+      rect(x0, y0 - lineHeight, x0 + colWidth, y0, border = colours$borders , lwd = 1)
       #if(counts)
-
       {
         fontval = 1
         textcol = textcols[1]
         if(counts==0) textcol="White"
-        rect(x0, yy - lineHeight, x0 + colWidth, yy,
+        rect(x0, y0 - lineHeight, x0 + colWidth, y0,
              col =  "white",
              border = colours$borders , lwd = 1)
-        text(x0 + colWidth/2, yy - lineHeight/2, labels = counts,
+        text(x0 + colWidth/2, y0 - lineHeight/2, labels = counts,
              col = textcol, cex = 1*textSc, font = fontval)
       }
     }
