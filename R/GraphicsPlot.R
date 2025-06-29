@@ -54,7 +54,15 @@ PlotPageHeader <- function(pi, colT, paper = "A4", orientation = "portrait") {
     dims = rev(dims)
   }
 
+  PlotCenteredImage<-function(img,center,width){
+    sc=1/sqrt(2)
+    h=dim(img)[1];w=dim(img)[2];a=h/w
+    cx=center[1];cy=center[2];halfw=width/2*sc;halfh=width/2*a
+    rasterImage(img, cx-halfw, cy-halfh, cx+halfw, cy+halfh)
+  }
 
+  # Add the image
+  PlotCenteredImage(logo,center=c(0.87,1.984), width=0.125)
   yTop = 2
 
   #if (pi %% 2 == 1) {

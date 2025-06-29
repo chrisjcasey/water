@@ -4,6 +4,7 @@
 #' Colours follow a themed scheme around water, safety, and severity.
 #'
 #' @importFrom grImport2 readPicture
+#' @importFrom png readPNG
 #' @name graphicsstyle-imports
 #' @rdname graphicsstyle-imports
 NULL
@@ -62,20 +63,20 @@ colSevere  = c(colBlack, colBrYellow, colBrOrange, colBrRed)
 superpal = c(colPalette, colTeal, colFadTeal, colLtGray, colDkGray, colBlack)
 
 # Load SVG picture icons (assumes SVGs have already been converted to cairo-compatible versions)
-SVGpicUparrow   = grImport2::readPicture("c:/Graphics/uparrow-cairo.svg")
-SVGpicDownarrow = grImport2::readPicture("c:/Graphics/downarrow-cairo.svg")
-SVGpicNochange  = grImport2::readPicture("c:/Graphics/nochange-cairo.svg")
+SVGpicUparrow   = grImport2::readPicture("../Assets/uparrow-cairo.svg")
+SVGpicDownarrow = grImport2::readPicture("../Assets/downarrow-cairo.svg")
+SVGpicNochange  = grImport2::readPicture("../Assets/nochange-cairo.svg")
 
 SVGarrows = list(
   down = SVGpicDownarrow,
   same = SVGpicNochange,
-  up   = SVGpicUparrow
-)
+  up   = SVGpicUparrow)
 
-SVGpicMale   = grImport2::readPicture("c:/Graphics/male-cairo.svg")
-SVGpicFemale = grImport2::readPicture("c:/Graphics/female-cairo.svg")
+SVGpicMale   = grImport2::readPicture("../Assets/male-cairo.svg")
+SVGpicFemale = grImport2::readPicture("../Assets/female-cairo.svg")
 
 SVGsex = list(
   female = SVGpicFemale,
-  male   = SVGpicMale
-)
+  male   = SVGpicMale)
+
+logo = readPNG("../Assets/black.png")

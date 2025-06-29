@@ -201,6 +201,8 @@ DrawDrowning1VarSplit <- function(
   if(groupVar=="AgeGroup")groups=c("00-04","05-14","15-24","25-34","35-44","45-54","55-64","65-74","75+")
   if(groupVar=="Age")groups=0:max(dfd[dfd$Year %in% years,]$Age,na.rm=T)
 
+  s=paste0(groupVar,",",paste0(years,collapse=","),"\n")
+
   nGroups = length(groups)
   nYears = length(years)
 
@@ -225,6 +227,7 @@ cat("lineHeight:",lineHeight,"\n")
     datLevel= df[df[[groupVar]] == levelName & df$Year %in% years, ]
     if(DEBUG)cat(levelName,nrow(datLevel),"\n")
     y0 = 2 -(lineHeight*((gi-1)*nVars+groupGap*(gi-1) + headerLines))
+    s=paste0(s,levelName,",")
     for (yi in seq_along(years))
     {
       yr = years[yi]
@@ -244,9 +247,14 @@ cat("lineHeight:",lineHeight,"\n")
              border = colours$borders , lwd = 1)
         text(x0 + colWidth/2, y0 - lineHeight/2, labels = counts,
              col = textcol, cex = 1*textSc, font = fontval)
-      }
-    }
 
+        s=paste0(s,counts,",")
+      }
+      #s=substr(s, 1, nchar(s)-1)
+
+
+    }
+    s=paste(s,"\n")
     #Level Totals
     x0 = length(years) * colWidth +1/2*colWidth + leftadj
     datTotal = datLevel
@@ -342,4 +350,6 @@ cat("lineHeight:",lineHeight,"\n")
 
 
   PlotPageFooter()
+
+  write(s,file=paste0(groupVar,".csv"))
 }
