@@ -1,32 +1,57 @@
+#' Get or Create WSNZ Database Connection (Singleton)
+#'
+#' Maintains a single database connection across function calls. If the connection is
+#' not yet established or has been closed, a new one is created. Otherwise, the existing
+#' connection is returned.
+#'
+#' @param force Logical. If TRUE, closes existing connection and creates a new one.
+#'
+#' @return A live `DBI` connection object.
+#'
+#' @import DBI
+#' @import odbc
+#' @export
+GetWSNZConnection<-function(force=FALSE){
+  # Use package environment to store the connection object
+  if(!exists(".wsnz_env", envir=.GlobalEnv)){
+    assign(".wsnz_env", new.env(parent=emptyenv()), envir=.GlobalEnv)
+  }
+  e = get(".wsnz_env", envir=.GlobalEnv)
+
+  if(!exists("con", envir=e) || force){
+    con = NULL
+  } else {
+    con = e$con
+  }
+
+  # Check if it's valid
+  if(is.null(con) || !DBI::dbIsValid(con) || force){
+    if(!is.null(con)) try(DBI::dbDisconnect(con), silent=TRUE)
+    con = DBI::dbConnect(odbc::odbc(),
+                         Driver="SQL Server",
+                         Server="heimatau.database.windows.net",
+                         Database="WSNZ",
+                         Port=1433,
+                         UID=Sys.getenv("WSNZDBUSER"),
+                         PWD=Sys.getenv("WSNZDBPASS"))
+    e$con = con
+  }
+
+  return(e$con)
+}
+
 #' Cache Water Safety Data Locally
 #'
 #' Connects to the WSNZ SQL Server database, fetches the full drowning dataset,
 #' performs preprocessing, attaches derived variables, loads GIS shapefiles,
 #' and saves the final objects into an `.RData` file for downstream use.
 #'
-#' @importFrom utils globalVariables
-#' @name cachedata-globals
-#' @rdname cachedata-globals
-utils::globalVariables(c(
-  "Name", "REGC2023_V", "REGC2023_1", "LAND_AREA_",
-  "AREA_SQ_KM", "Shape_Leng", "geometry"
-))
 #' @return None. Side effect is a saved file `Data/data.RData` in the working directory.
 #' @export
 #' @import DBI odbc sqldf sf lubridate dplyr
 CacheData <- function()
 {
-  con <- tryCatch({
-    con = dbConnect(odbc(), Driver="SQL Server", Server="heimatau.database.windows.net",
-                    Database="WSNZ", Port=1433,
-                    Uid=Sys.getenv("WSNZDBUSER"), Pwd=Sys.getenv("WSNZDBPASS"))},
-    error = function(e)
-    {
-      message("Error connecting to DB: ", e$message)
-      return(NULL)
-    })
-
-  if (is.null(con)) return(NULL)
+  con = GetWSNZConnection()
 
   df <- tryCatch({
     dbGetQuery(con, "exec GetAllPrevDrowningData")
@@ -94,10 +119,10 @@ CacheData <- function()
   grps = grps[!is.na(grps$Grp),]
   dfd=df
 
-  tas     = st_read("../Assets/statsnz-territorial-authority-2025-clipped-SHP")
+  tas     = st_read("c:/Code/Assets/statsnz-territorial-authority-2025-clipped-SHP")
   tas     = st_transform(tas, crs = 4326)
   tas$Name = tas$TA2025_V_1
-  regs     = st_read("../Assets/statsnzregional-council-2023-clipped-generalised-SHP")
+  regs     = st_read("c:/Code/Assets/statsnzregional-council-2023-clipped-generalised-SHP")
   regs     = st_transform(regs, crs = 4326)
   regs$Name = regs$REGC2023_1
   regs$Name  = gsub(" Region","",regs$Name)
@@ -119,7 +144,7 @@ CacheData <- function()
 
 
 
-  roads   = st_read("../Assets/statsnz-nz-road-centrelines-topo-150k-SHP")
+  roads   = st_read("c:/Code/Assets/statsnz-nz-road-centrelines-topo-150k-SHP")
   roads   = st_transform(roads, crs = 4326)
 
 
@@ -225,7 +250,15 @@ CacheData <- function()
   dn$R5=movsum(dn$n,5)/movsum(dn$pop,5)*1e5
   dn$R1=dn$n/dn$pop*1e5
 
-  LOI = read.csv(file.path("../Assets/LOI.csv"), encoding = "UTF-8")
+  LOI = read.csv(file.path("c:/Code/Assets/LOI.csv"), encoding = "UTF-8")
 
-  save(file=file.path("../Data/data.RData"),dfd,grps,pts,tas,regs,roads,dn,LOI)
+  geoms = dbGetQuery(con, "
+    SELECT * FROM Geometry g
+    JOIN GeometryPoints p ON g.GeometryID = p.GeometryID
+    WHERE Labels = 'BLACKSPOT'
+    ORDER BY p.GeometryID, PointID
+  ")
+  save(file=file.path(tempdir(),"data.RData"),dfd,grps,pts,tas,regs,roads,dn,LOI,geoms)
 }
+
+utils::globalVariables(c("Name", "REGC2023_V", "REGC2023_1", "LAND_AREA_","AREA_SQ_KM", "Shape_Leng", "geometry"))

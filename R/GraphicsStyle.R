@@ -63,20 +63,20 @@ colSevere  = c(colBlack, colBrYellow, colBrOrange, colBrRed)
 superpal = c(colPalette, colTeal, colFadTeal, colLtGray, colDkGray, colBlack)
 
 # Load SVG picture icons (assumes SVGs have already been converted to cairo-compatible versions)
-SVGpicUparrow   = grImport2::readPicture("../Assets/uparrow-cairo.svg")
-SVGpicDownarrow = grImport2::readPicture("../Assets/downarrow-cairo.svg")
-SVGpicNochange  = grImport2::readPicture("../Assets/nochange-cairo.svg")
+SVGpicUparrow   = grImport2::readPicture("c:/Code/assets/uparrow-cairo.svg")
+SVGpicDownarrow = grImport2::readPicture("c:/Code/assets/downarrow-cairo.svg")
+SVGpicNochange  = grImport2::readPicture("c:/Code/assets/nochange-cairo.svg")
 
 SVGarrows = list(
   down = SVGpicDownarrow,
   same = SVGpicNochange,
   up   = SVGpicUparrow)
 
-SVGpicMale   = grImport2::readPicture("../Assets/male-cairo.svg")
-SVGpicFemale = grImport2::readPicture("../Assets/female-cairo.svg")
+SVGpicMale   = grImport2::readPicture("c:/Code/Assets/male-cairo.svg")
+SVGpicFemale = grImport2::readPicture("c:/Code/Assets/female-cairo.svg")
 
 SVGsex = list(
   female = SVGpicFemale,
   male   = SVGpicMale)
 
-logo = readPNG("../Assets/black.png")
+logo = readPNG("c:/Code/Assets/black.png")
