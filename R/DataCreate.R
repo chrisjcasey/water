@@ -3,8 +3,6 @@
 #' This function identifies which drowning events fall inside polygons labeled as "BLACKSPOT"
 #' from the Geometry and GeometryPoints tables in your database.
 #'
-#' @param geometry Polygon data. List of Blackspot polygons and points
-#' @param dfd A data.frame of drowning records containing at least `DrowningID`, `Latitude`, and `Longitude`.
 #' @param tableName Optional. Name of the database table to write the results to (default: `"BlackSpotDrownings"`).
 #' @param writeToDB Logical. If TRUE, the function writes the output to the SQL database (default: `TRUE`).
 #'
@@ -44,18 +42,17 @@ BlackspotDrowningTable<-function(tableName="BlackSpotDrownings", writeToDB=TRUE)
   bs = st_within(drownings_sf, polygons_sf, sparse = FALSE)
   pairs = which(bs, arr.ind = TRUE)
 
-  blackspotDrownings = data.frame(
+  bsdf = data.frame(
     DrowningID = drownings_sf$DrowningID[pairs[, 1]],
     Latitude   = st_coordinates(drownings_sf)[pairs[, 1], 2],
     Longitude  = st_coordinates(drownings_sf)[pairs[, 1], 1],
     GeometryID = polygons_sf$GeometryID[pairs[, 2]],
-    Name       = polygons_sf$Name[pairs[, 2]],
-    Label      = polygons_sf$Labels[pairs[, 2]]
+    Name       = polygons_sf$Name[pairs[, 2]]
   )
 
   if(writeToDB){
-    dbWriteTable(GetWSNZConnection(), tableName, blackspotDrownings, overwrite=TRUE)
+    dbWriteTable(GetWSNZConnection(), tableName, data.frame(DrowningID=bsdf$DrowningID ,GeometryID=bsdf$GeometryID), overwrite=TRUE)
   }
 
-  return(blackspotDrownings)
+  return(bsdf)
 }

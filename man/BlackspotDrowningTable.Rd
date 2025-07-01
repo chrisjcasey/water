@@ -10,10 +10,6 @@ BlackspotDrowningTable(tableName = "BlackSpotDrownings", writeToDB = TRUE)
 \item{tableName}{Optional. Name of the database table to write the results to (default: \code{"BlackSpotDrownings"}).}
 
 \item{writeToDB}{Logical. If TRUE, the function writes the output to the SQL database (default: \code{TRUE}).}
-
-\item{geometry}{Polygon data. List of Blackspot polygons and points}
-
-\item{dfd}{A data.frame of drowning records containing at least \code{DrowningID}, \code{Latitude}, and \code{Longitude}.}
 }
 \value{
 A data.frame of drowning events that fall within BLACKSPOT polygons. Includes DrowningID,
