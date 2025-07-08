@@ -58,6 +58,8 @@ DrawDrowningFunnel <- function(
   text(0.00,1.975,title,font=2,col=colours$text1,adj=0,cex=0.90)
   text(0.00,1.950,subtitle,font=3,col=colours$text1,adj=0,cex=0.90)
 
+
+
   drawFunnelBlock <- function(datRegion, regionName, y0base, rectcol, highlight=FALSE) {
     for (i in seq_along(years)) {
       yr = years[i]
@@ -67,6 +69,7 @@ DrawDrowningFunnel <- function(
 
       counts = rep(NA, 4)
       counts[1] = nrow(datYr)
+
       for (j in 1:3) {
         datYr = datYr[datYr[[funnelVars[j]]] %in% funnelVals[[j]], ]
         counts[j + 1] = nrow(datYr)
@@ -106,6 +109,8 @@ DrawDrowningFunnel <- function(
       }
     }
 
+
+
     # Region name and funnel labels
     yy = y0base
     rect(-0.10, yy - ygap, -0.01+leftadj, yy, col = rectcol, border=NA, lwd = 1)
@@ -121,6 +126,8 @@ DrawDrowningFunnel <- function(
     datRegion = df[df[[groupVar]] == region & df$Year %in% years, ]
     y0 = 2 - (g - 1) * 4 * ygap - (g - 1) * groupGap * ygap - headerLines *ygap
     if(DEBUG)cat(region,nrow(datRegion),"\n")
+    dd=datRegion
+
     drawFunnelBlock(datRegion, region, y0, colours$header, highlight=TRUE)
   }
 
@@ -186,6 +193,8 @@ DrawDrowning1VarSplit <- function(
     colours = list(highlight = "#BF0000"),
     years = 2000:2024,
     groupGap = 0,
+    pop = NA,
+    lookback=1,
     DEBUG = FALSE
 ) {
 
@@ -203,13 +212,20 @@ DrawDrowning1VarSplit <- function(
 
   s=paste0(groupVar,",",paste0(years,collapse=","),"\n")
 
+
+################
+# years=2000:2024
+# lookback=10
+# groupVar="AgeGroup"
+# groups=c("00-04","05-14","15-24","25-34","35-44","45-54","55-64","65-74","75+")
+# df=dfd
+################
+
   nGroups = length(groups)
   nYears = length(years)
 
-
-
   lineHeight = min(0.035,2/(nGroups+4))
-cat("lineHeight:",lineHeight,"\n")
+
   textSc = (lineHeight/0.035)^(1/7)
   headerLines = 4
   nVars = 1
@@ -219,40 +235,44 @@ cat("lineHeight:",lineHeight,"\n")
   leftadj=0.11
 
   text(0.00,1.965,title,font=2,col=colours$text1,adj=0,cex=0.90)
-  text(0.00,1.965,subtitle,font=3,col=colours$text1,adj=0,cex=0.90)
+  if(subtitle=="") text(0.00,1.940,paste0("(", lookback, " year rolling means)"),font=3,col=colours$text1,adj=0,cex=0.90)
+    else text(0.00,1.940,subtitle,font=3,col=colours$text1,adj=0,cex=0.90)
 
   for(gi in seq_along(groups))
   {
     levelName = groups[gi]
-    datLevel= df[df[[groupVar]] == levelName & df$Year %in% years, ]
+    datLevel= df[df[[groupVar]] == levelName, ]
     if(DEBUG)cat(levelName,nrow(datLevel),"\n")
-    y0 = 2 -(lineHeight*((gi-1)*nVars+groupGap*(gi-1) + headerLines))
+    y0 = 2 - (lineHeight*((gi-1)*nVars+groupGap*(gi-1) + headerLines))
     s=paste0(s,levelName,",")
     for (yi in seq_along(years))
     {
       yr = years[yi]
-      datY = datLevel[datLevel$Year == yr, ]
+      datY = datLevel[datLevel$Year %in% (yr-lookback+1):yr, ]
       x0 = (yi - 1) * colWidth + leftadj
 
-      counts = nrow(datY)
+      counts = nrow(datY)/lookback
+
+      if(!is.null(pop)) rates = counts / mean(pop[pop$Year  %in% (yr-lookback+1):yr & pop$AgeGroup==levelName,]$Population)*1e5
 
       rect(x0, y0 - lineHeight, x0 + colWidth, y0, border = colours$borders , lwd = 1)
-      #if(counts)
-      {
-        fontval = 1
-        textcol = textcols[1]
-        if(counts==0) textcol="White"
-        rect(x0, y0 - lineHeight, x0 + colWidth, y0,
-             col =  "white",
-             border = colours$borders , lwd = 1)
-        text(x0 + colWidth/2, y0 - lineHeight/2, labels = counts,
-             col = textcol, cex = 1*textSc, font = fontval)
 
+      fontval = 1
+      textcol = textcols[1]
+      if(counts==0) textcol="White"
+      rect(x0, y0 - lineHeight, x0 + colWidth, y0,
+           col =  "white",
+           border = colours$borders , lwd = 1)
+      if(!is.null(pop))
+      {
+        text(x0 + colWidth/2, y0 - lineHeight/2, labels = sprintf("%5.2f",rates), col = textcol, cex = 0.9*textSc, font = fontval)
+        s=paste0(s,rates,",")
+      }
+        else
+      {
+        text(x0 + colWidth/2, y0 - lineHeight/2, labels = counts, col = textcol, cex = 1*textSc, font = fontval)
         s=paste0(s,counts,",")
       }
-      #s=substr(s, 1, nchar(s)-1)
-
-
     }
     s=paste(s,"\n")
     #Level Totals
@@ -260,23 +280,25 @@ cat("lineHeight:",lineHeight,"\n")
     datTotal = datLevel
     counts = nrow(datTotal)
 
-
-    rect(x0, y0 - lineHeight, x0 + colWidth, y0,
-         col =  "white",
-         border = colours$borders , lwd = 1)
-    #if(counts)
-    {
-      textcol = textcols[1]
-      text(x0 + colWidth/2, y0 - lineHeight/2, labels = counts, col = textcol, cex = 1*textSc, font = 2)
-    }
-
-    # level name
     txtWidth = max(strwidth(c("Total",unique(groups))))*1.5
-    x0 =  leftadj-0.01
-    rect(x0-txtWidth,   y0,             x0, y0-lineHeight, col=colours$header, border="white", lwd = 1)
-    text(x0-txtWidth/2, y0-lineHeight/2, labels=levelName, col=colours$hitext, xpd = TRUE, cex = 1.0*textSc, font=2)
-    #yy = y0 - lineHeight
-    #text(-0.01+leftadj,  yy - lineHeight/2, labels = levelName, xpd = TRUE, cex = 0.85,font=1, adj=1)
+
+      if(is.null(pop))
+      {
+        rect(x0, y0 - lineHeight, x0 + colWidth, y0,
+         col =  "white",
+             border = colours$borders , lwd = 1)
+        textcol = textcols[1]
+        text(x0 + colWidth/2, y0 - lineHeight/2, labels = counts, col = textcol, cex = 1*textSc, font = 2)
+      }
+
+      # level name
+
+      x0 =  leftadj-0.01
+      rect(x0-txtWidth,   y0,             x0, y0-lineHeight, col=colours$header, border="white", lwd = 1)
+      text(x0-txtWidth/2, y0-lineHeight/2, labels=levelName, col=colours$hitext, xpd = TRUE, cex = 1.0*textSc, font=2)
+      #yy = y0 - lineHeight
+      #text(-0.01+leftadj,  yy - lineHeight/2, labels = levelName, xpd = TRUE, cex = 0.85,font=1, adj=1)
+
   }
   # level name
 
@@ -288,11 +310,14 @@ cat("lineHeight:",lineHeight,"\n")
   # Draw NZ Totals at bottom
   for (yi in seq_along(years))
   {
-    datY = df[df$Year %in% years[yi], ]
+    yr = years[yi]
+    datY = df[df$Year %in% (yr-lookback+1):yr, ]
     x0 = (yi - 1) * colWidth + leftadj
     y0 = 2 -(lineHeight*((nGroups)*nVars+groupGap*(nGroups-1) + headerLines+ 1/2) )
 
-    counts = nrow(datY)
+    counts = nrow(datY)/lookback
+
+    if(!is.null(pop)) rates = counts / (sum(pop[pop$Year  %in% (yr-lookback+1):yr ,]$Population)/lookback)*1e5
 
     yy = y0
     rect(x0, yy - lineHeight, x0 + colWidth, yy, border = colours$borders , lwd = 1)
@@ -303,8 +328,16 @@ cat("lineHeight:",lineHeight,"\n")
       rect(x0, yy - lineHeight, x0 + colWidth, yy,
            col =  "white",
            border = colours$borders , lwd = 1)
-      text(x0 + colWidth/2, yy - lineHeight/2, labels = counts,
-           col = colours$text1, cex = 1*textSc, font = 2)
+
+      if(!is.null(pop))
+      {
+        text(x0 + colWidth/2, yy - lineHeight/2, labels = sprintf("%4.2f",rates),
+             col = colours$text1, cex = 0.9*textSc, font = 2)
+      }else
+      {
+        text(x0 + colWidth/2, yy - lineHeight/2, labels = counts,
+             col = colours$text1, cex = 1*textSc, font = 2)
+      }
     }
   }
 
@@ -314,16 +347,26 @@ cat("lineHeight:",lineHeight,"\n")
 
   counts = nrow(datAll)
 
+  if(!is.null(pop)) rates = counts / sum(pop[pop$Year  %in% (yr-lookback+1):yr ,]$Population)/lookback*1e5
+
   yy = y0
-  rect(x0, yy - lineHeight, x0 + colWidth, yy, border = colours$borders , lwd = 1)
-  #if(counts)
+
+  if(is.null(pop))
   {
+    rect(x0, yy - lineHeight, x0 + colWidth, yy, border = colours$borders , lwd = 1)
     rect(x0, yy - lineHeight, x0 + colWidth, yy,
          col =  "white",
          border = colours$borders , lwd = 1)
-    text(x0 + colWidth/2, yy - lineHeight/2, labels = counts,
-         col = colours$text2, cex = 1*textSc, font = 2)
-  }
+
+    if(!is.null(pop))
+    {
+      text(x0 + colWidth/2, yy - lineHeight/2, labels = sprintf("%5.2f",rates),
+         col = colours$text2, cex = 1*textSc, font = 2)}
+    else
+    {
+      text(x0 + colWidth/2, yy - lineHeight/2, labels = counts,
+         col = colours$text2, cex = 1*textSc, font = 2)}
+    }
 
   # Add box around bottom-right NZ totals cell
   #x0 = (length(years) + 1/2) * colWidth + leftadj
@@ -338,15 +381,10 @@ cat("lineHeight:",lineHeight,"\n")
   }
 
   # Label for total column
-  x0 = length(years)* colWidth+ 1/2*colWidth+leftadj
-  rect(x0, 2-4*lineHeight, x0 + colWidth, 2-3*lineHeight, col = "black", border = NA)
-  text(x0 + colWidth/2, 2-7/2*lineHeight, labels = "Total", adj = c(0.5, 0.5), col = "white", cex = 0.7*textSc, xpd = TRUE,font=2)
+ # x0 = length(years)* colWidth+ 1/2*colWidth+leftadj
+ #  rect(x0, 2-4*lineHeight, x0 + colWidth, 2-3*lineHeight, col = "black", border = NA)
+ #  text(x0 + colWidth/2, 2-7/2*lineHeight, labels = "Total", adj = c(0.5, 0.5), col = "white", cex = 0.7*textSc, xpd = TRUE,font=2)
 
-
-  # Label for total column
-  x0 = length(years)* colWidth+ 1/2*colWidth+leftadj
-  rect(x0, 2-4*lineHeight, x0 + colWidth, 2-3*lineHeight, col = "black", border = NA)
-  text(x0 + colWidth/2, 2-7/2*lineHeight, labels = "Total", adj = c(0.5, 0.5), col = "white", cex = 0.7*textSc, xpd = TRUE,font=2)
 
 
   PlotPageFooter()

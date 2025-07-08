@@ -14,6 +14,8 @@ DrawDrowning1VarSplit(
   colours = list(highlight = "#BF0000"),
   years = 2000:2024,
   groupGap = 0,
+  pop = NA,
+  lookback = 1,
   DEBUG = FALSE
 )
 }

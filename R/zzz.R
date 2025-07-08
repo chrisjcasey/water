@@ -1,12 +1,22 @@
 .onLoad <- function(libname, pkgname) {
-  pkg_env <- parent.env(environment())
-  cache_path <- file.path(tempdir(), "data.RData")
+  pkg_env = parent.env(environment())
+  cache_path = "c:/Code/assets/Volatile/data.RData"
 
   message("📦 [water] .onLoad triggered")
 
-  if (!file.exists(cache_path)) {
-    message("🔁 No cache file found — attempting to run CacheData()")
+  refresh_needed = !file.exists(cache_path)
 
+  # Check if cache is stale (i.e., not from today)
+  if (!refresh_needed) {
+    cache_date = as.Date(file.info(cache_path)$mtime)
+    today = Sys.Date()
+    if (cache_date < today) {
+      message("🔁 Cache file is from a previous day — refreshing.")
+      refresh_needed = TRUE
+    }
+  }
+
+  if (refresh_needed) {
     tryCatch({
       uid = Sys.getenv("WSNZDBUSER")
       pwd = Sys.getenv("WSNZDBPASS")
@@ -22,7 +32,7 @@
   }
 
   if (file.exists(cache_path)) {
-    tmpenv <- new.env()
+    tmpenv = new.env()
     load(cache_path, envir = tmpenv)
     for (obj in ls(tmpenv)) {
       assign(obj, get(obj, envir = tmpenv), envir = pkg_env)

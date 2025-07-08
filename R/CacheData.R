@@ -10,6 +10,7 @@
 #'
 #' @import DBI
 #' @import odbc
+#' @import stringi
 #' @export
 GetWSNZConnection<-function(force=FALSE){
   # Use package environment to store the connection object
@@ -33,7 +34,9 @@ GetWSNZConnection<-function(force=FALSE){
                          Database="WSNZ",
                          Port=1433,
                          UID=Sys.getenv("WSNZDBUSER"),
-                         PWD=Sys.getenv("WSNZDBPASS"))
+                         PWD=Sys.getenv("WSNZDBPASS"),
+                         timeout = 60,
+                         ConnectionTimeout = "60")
     e$con = con
   }
 
@@ -51,7 +54,7 @@ GetWSNZConnection<-function(force=FALSE){
 #' @import DBI odbc sqldf sf lubridate dplyr
 CacheData <- function()
 {
-  con = GetWSNZConnection()
+  con = GetWSNZConnection(TRUE)
 
   df <- tryCatch({
     dbGetQuery(con, "exec GetAllPrevDrowningData")
@@ -91,14 +94,29 @@ CacheData <- function()
   df$RegionDesc1=df$RegionDesc
   df$RegionDesc1[df$RegionDesc1 %in% c("Chathams","Other New Zealand")]="Oceanic & Islands"
 
+  df$TAName = df$LocationDesc
+  df$TAName[grepl(" Ward", df$TAName)]="Auckland"
+  df$TAName = gsub(" Council","",df$TAName)
+  df$TAName[df$TAName %in% c("Auckland City","Franklin District","Manukau City","North Shore City",
+                             "Papakura District","Rodney District","Waitakere City")]="Auckland"
+  df$TAName[grepl(" Ocean", df$TAName)]="Area Outside Territorial Authority"
+  df$TAName[df$TAName=="Hutt City"]="Lower Hutt City"
+  df$TAName[df$TAName=="Wanganui District"]="Whanganui District"
+
+
   df$BloodAlcoholDesc = "No"
   df$BloodAlcoholDesc[df$AlcoholDesc %in% c("Alcohol Involved", "Alcohol & Drugs Involved")]="Yes"
   df$BloodAlcoholDesc[df$BloodAlcohol>=25]="Yes"
+
   df$BloodAlcoholDesc[ df$BloodAlcoholDesc == "No" & df$AlcoholDesc=="Unknown" ]="Unknown"
 
   df$LJ = NA
   df$LJ[df$BuoyancyDesc %in% c("Unknown","Not Applicable","Carried but not Worn","Not Available","Worn - Incorrectly Fitted")]=0
   df$LJ[df$BuoyancyDesc %in% c("Worn - Correctly Fitted")]=1
+
+  df$Lifejacket = NA
+  df$Lifejacket = "No Lifejacket"
+  df$Lifejacket[df$LF==1] = "Lifejacket"
 
   #df$OHP = GetHolCounts(con,"Official Holiday Period",0,nrow(df))
   #df$Easter = GetHolCounts(con,"Easter",0,nrow(df))
@@ -119,13 +137,15 @@ CacheData <- function()
   grps = grps[!is.na(grps$Grp),]
   dfd=df
 
-  tas     = st_read("c:/Code/Assets/statsnz-territorial-authority-2025-clipped-SHP")
-  tas     = st_transform(tas, crs = 4326)
-  tas$Name = tas$TA2025_V_1
-  regs     = st_read("c:/Code/Assets/statsnzregional-council-2023-clipped-generalised-SHP")
-  regs     = st_transform(regs, crs = 4326)
+  tas      = st_read("c:/Code/Assets/statsnz-territorial-authority-2025-clipped-SHP")
+  tas      = st_transform(tas, crs = 4326)
+  tas$Name = stringi::stri_trans_general(tas$TA2025_V_1 , "Latin-ASCII")
+  tas$Name = gsub(" Territory","", tas$Name)
+
+  regs      = st_read("c:/Code/Assets/statsnzregional-council-2023-clipped-generalised-SHP")
+  regs      = st_transform(regs, crs = 4326)
   regs$Name = regs$REGC2023_1
-  regs$Name  = gsub(" Region","",regs$Name)
+  regs$Name = gsub(" Region","",regs$Name)
 
   regs$Name[regs$REGC2023_V==8]  = "Manawatu-Wanganui"
 
@@ -144,8 +164,8 @@ CacheData <- function()
 
 
 
-  roads   = st_read("c:/Code/Assets/statsnz-nz-road-centrelines-topo-150k-SHP")
-  roads   = st_transform(roads, crs = 4326)
+  roads  = st_read("c:/Code/Assets/statsnz-nz-road-centrelines-topo-150k-SHP")
+  roads  = st_transform(roads, crs = 4326)
 
 
   # Sample data frame with latitude, longitude, and other fields
@@ -168,7 +188,7 @@ CacheData <- function()
   ptsdata = ptsdata[!is.na(ptsdata$lat),]
 
   # Convert to sf object
-  pts <- st_as_sf(ptsdata, coords = c("lon", "lat"), crs = 4326)
+  pts = st_as_sf(ptsdata, coords = c("lon", "lat"), crs = 4326)
 
 
   n=nrow(pts)
@@ -188,8 +208,6 @@ CacheData <- function()
     }
   }
   pts$ii=r
-
-
 
   dn=data.frame(matrix(c(1980,146,3237742,
                          1981,143,3250794,
@@ -238,6 +256,32 @@ CacheData <- function()
                          2024,72,5338500),ncol=3,byrow=T))
   names(dn)=c("year","n","pop")
 
+  pop = data.frame(
+    Year = rep(1990:2024, times = 9),
+    AgeGroup = rep(c("00-04", "05-14", "15-24", "25-34", "35-44", "45-54", "55-64", "65-74", "75+"), each = 35),
+    Population = c(
+      # "00-04" values
+      235326,246986,249601,252428,255820,259565,539342,267197,269600,271014,272639,276188,279737,283285,286834,290383,293932,297481,301030,307200,314350,317460,315730,311930,308810,305740,305020,305980,306380,311027,315674,320321,324968,329615,334263,
+      # "05-14" values
+      464719,487746,492909,498491,505190,512587,1065087,527659,532403,535195,538404,545413,552421,559429,566437,573445,580453,587461,594470,593900,593750,593240,594070,596870,602290,608560,616580,627720,638220,647900,657581,667261,676942,686622,696303,
+      # "15-24" values
+      473553,497018,502279,507968,514794,522331,1085334,537689,542524,545369,548639,555780,562921,570063,577204,584345,591487,598628,605770,609370,616890,621780,623500,627400,639230,655460,667180,672340,672420,682619,692818,703017,713217,723416,733615,
+      # "25-34" values
+      422505,443440,448135,453210,459300,466025,968337,479728,484041,486579,489497,495869,502240,508612,514983,521355,527726,534098,540470,541130,542790,543000,542840,548580,568880,599300,637210,675940,710770,721550,732331,743112,753893,764674,775455,
+      # "35-44" values
+      491916,516290,521756,527665,534755,542585,1127419,558539,563561,566516,569913,577332,584750,592168,599586,607005,614423,621841,629260,624220,619280,610990,601820,592930,586660,583030,580530,582320,588780,597710,606641,615571,624502,633433,642363,
+      # "45-54" values
+      466916,490051,495239,500848,507578,515010,1070121,530153,534920,537724,540949,547991,555032,562073,569114,576156,583197,590238,597280,608260,616220,620240,622370,625660,628700,631780,635250,637170,637360,647027,656694,666362,676029,685697,695364,
+      # "55-64" values
+      356793,374471,378436,382722,387865,393543,817731,405115,408758,410901,413365,418746,424126,429507,434887,440268,445648,451029,456410,470140,483870,497210,504680,512770,524770,537450,553020,569350,584610,593477,602344,611212,620079,628946,637814,
+      # "65-74" values
+      227337,238601,241127,243858,247135,250753,521032,258126,260447,261813,263383,266811,270240,273668,277096,280525,283953,287381,290810,300440,311510,323860,342200,359800,376430,390940,403320,416320,432490,439050,445610,452170,458730,465290,471850,
+      # "75+" values
+      190931,200392,202513,204807,207559,210598,437594,216790,218739,219886,221205,224084,226964,229843,232722,235602,238481,241360,244240,247900,251980,256200,260810,266180,273980,283420,295080,306730,314360,319128,323896,328664,333432,338201,342969
+    ),
+    stringsAsFactors = FALSE
+  )
+
   movsum <- function(x, n)
   {
     res =rep(NA, length(x))
@@ -258,7 +302,7 @@ CacheData <- function()
     WHERE Labels = 'BLACKSPOT'
     ORDER BY p.GeometryID, PointID
   ")
-  save(file=file.path(tempdir(),"data.RData"),dfd,grps,pts,tas,regs,roads,dn,LOI,geoms)
+  save(file="c:/Code/Assets/Volatile/data.RData",dfd,grps,pts,tas,regs,roads,dn,LOI,geoms,pop)
 }
 
 utils::globalVariables(c("Name", "REGC2023_V", "REGC2023_1", "LAND_AREA_","AREA_SQ_KM", "Shape_Leng", "geometry"))
